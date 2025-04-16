@@ -62,5 +62,48 @@ router.get("/", auth, async (req, res) => {
         res.status(400).send(error);
     }
 });
+router.get("/my-carts", auth, async (req, res) => {
+    try {
+        const carts = await Cart.find({ userId: req.payload._id });
+        if (!carts) return res.status(404).send("No such cart");
+
+        res.status(200).send(carts);
+    } catch (error) {
+        res.status(400).send(error);
+    }
+});
+
+router.get("/:cartId", auth, async (req, res) => {
+    try {
+        const cart = await Cart.findById(req.params.cartId);
+        if (!cart) return res.status(404).send("No such cart");
+
+        let promises = cart.products.map((p) => Procduct.findById(p.productId));
+        let result = await Promise.all(promises);
+        if (!result) return res.status(400).send("Error in products");
+
+        let cartItems = [];
+        for (let i in result) {
+            if (result[i])
+                cartItems.push({
+                    ...result[i].toObject(),
+                    ...cart.products[i].toObject(),
+                });
+        }
+        res.status(200).send(cartItems);
+    } catch (error) {
+        res.status(400).send(error);
+    }
+});
+router.delete("/:cartId", auth, async (req, res) => {
+    try {
+        const cart = await Cart.findByIdAndDelete(req.params.cartId);
+        if (!cart) return res.status(404).send("No such cart");
+
+        res.status(200).send(cart);
+    } catch (error) {
+        res.status(400).send(error);
+    }
+})
 
 module.exports = router;
