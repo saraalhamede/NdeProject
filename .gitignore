@@ -1,2 +1,2 @@
-/server-side/.env
-/server-side/node_modules
+.env
+node_modules
