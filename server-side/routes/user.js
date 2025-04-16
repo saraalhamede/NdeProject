@@ -36,7 +36,7 @@ router.post("/", async (req, res) => {
         const cart = new Cart({ userId: user._id, products: [], active: true });
         await cart.save();
 
-        // 4. create token
+
         const token = jwt.sign(
             { _id: user._id, isAdmin: user.isAdmin },
             process.env.JWTKEY
@@ -76,16 +76,64 @@ router.post("/login", async (req, res) => {
         res.status(400).send(error);
     }
 });
-
-
-router.get("/profile", auth, async (req, res) => {
+router.get("/users", auth, async (req, res) => {
     try {
-        const user = await User.findById(req.payload._id);
-        if (!user) return res.status(404).send("No such user");
-        res.status(200).send(_.pick(user, ["_id", "email", "name", "isAdmin"]));
+        const users = await User.find({}).select("-password");
+        res.status(200).send(users);
     } catch (error) {
         res.status(400).send(error);
     }
 });
+router.get("/users/:id", auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select("-password");
+        if (!user) return res.status(404).send("No such user");
+        res.status(200).send(user);
+    } catch (error) {
+        res.status(400).send(error);
+    }
+}
+);
+
+router.put("/users/:id", auth, async (req, res) => {
+    try {
+        const { error } = registerSchema.validate(req.body);
+        if (error) return res.status(400).send(error.details[0].message);
+
+        const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+        }).select("-password");
+        if (!user) return res.status(404).send("No such user");
+        res.status(200).send(user);
+    } catch (error) {
+        res.status(400).send(error);
+    }
+});
+
+router.patch("/users/:id", auth, async (req, res) => {
+    try {
+        const { error } = registerSchema.validate(req.body);
+        if (error) return res.status(400).send(error.details[0].message);
+
+        const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+        }).select("-password");
+        if (!user) return res.status(404).send("No such user");
+        res.status(200).send(user);
+    } catch (error) {
+        res.status(400).send(error);
+    }
+});
+
+router.delete("/users/:id", auth, async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id).select("-password");
+        if (!user) return res.status(404).send("No such user");
+        res.status(200).send(user);
+    } catch (error) {
+        res.status(400).send(error);
+    }
+})
+
 
 module.exports = router;
